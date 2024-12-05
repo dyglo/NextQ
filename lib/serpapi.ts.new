@@ -1,0 +1,25 @@
+import { getJson } from 'serpapi';
+
+export async function searchWithSerpApi(query: string) {
+  if (!process.env.SERPAPI_API_KEY) {
+    throw new Error('SERPAPI_API_KEY is not configured');
+  }
+
+  try {
+    const response = await getJson({
+      api_key: process.env.SERPAPI_API_KEY,
+      q: query,
+      engine: "google",
+      google_domain: "google.com",
+      gl: "us",
+      hl: "en",
+      num: "5",
+      safe: "active"
+    });
+
+    return response;
+  } catch (error) {
+    console.error('SerpAPI error:', error);
+    throw error;
+  }
+}
