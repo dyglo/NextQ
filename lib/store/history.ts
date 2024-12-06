@@ -1,13 +1,19 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+export interface Source {
+  link: string;
+  title: string;
+  position: number;
+}
+
 export interface HistoryItem {
   id: string;
   query: string;
   answer: string;
   timestamp: number;
   type?: 'text' | 'image' | 'pdf' | 'voice';
-  sources?: any[];
+  sources?: Source[];
 }
 
 interface HistoryStore {

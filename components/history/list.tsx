@@ -12,15 +12,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useHistoryStore } from "@/lib/store/history";
+import { useHistoryStore, type Source } from "@/lib/store/history";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-
-interface Source {
-  link: string;
-  title: string;
-  position: number;
-}
 
 export function HistoryList() {
   const items = useHistoryStore((state) => state.items);
