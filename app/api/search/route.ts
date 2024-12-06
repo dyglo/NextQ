@@ -4,7 +4,7 @@ import { searchWithSerpApi } from "@/lib/serpapi";
 
 export async function POST(request: Request) {
   try {
-    const { query } = await request.json();
+    const { query, previousContext } = await request.json();
     
     if (!query) {
       return NextResponse.json(
@@ -31,15 +31,22 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate AI answer based on the search results
+    // Generate AI answer based on the search results and previous context
     try {
-      const context = `Based on these search results, provide a comprehensive answer to the question: "${query}"\n\nSearch Results:\n\n${
+      let contextPrompt = `Based on these search results, provide a comprehensive answer to the question: "${query}"`;
+      
+      // Add previous context if available
+      if (previousContext) {
+        contextPrompt = `Previous context: ${previousContext}\n\nBased on the previous context and these new search results, provide a comprehensive answer to the follow-up question: "${query}"`;
+      }
+
+      contextPrompt += `\n\nSearch Results:\n\n${
         searchResults.map((r: any, i: number) => 
           `[${i + 1}] Title: ${r.title}\nSnippet: ${r.snippet}\nURL: ${r.link}\n`
         ).join('\n')
       }`;
       
-      const answer = await generateAnswer(context);
+      const answer = await generateAnswer(contextPrompt);
       
       if (!answer) {
         throw new Error("Failed to generate answer");
@@ -47,7 +54,8 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ 
         answer,
-        sources: searchResults
+        sources: searchResults,
+        context: query // Return the current query as context for future reference
       });
     } catch (aiError) {
       console.error('AI answer generation error:', aiError);

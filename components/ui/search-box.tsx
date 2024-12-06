@@ -20,20 +20,34 @@ export function SearchBox() {
     sources?: any[];
     error?: string;
     suggestions?: string[];
+    context?: string;
   }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const addToHistory = useHistoryStore((state) => state.addItem);
 
-  const generateSuggestions = (query: string, answer: string): string[] => {
-    // Simple logic to generate follow-up questions based on the current context
-    const suggestions = [
+  const generateSuggestions = (query: string, answer: string, previousContext?: string): string[] => {
+    // Generate context-aware follow-up questions
+    const baseQuestions = [
       `Can you explain more about ${query.split(' ').slice(-2).join(' ')}?`,
       `What are the latest updates on this topic?`,
-      `How does this compare to previous similar events?`,
-      `What are the implications of this?`
+      `How does this compare to previous similar cases?`,
+      `What are the practical implications of this?`
     ];
-    return suggestions;
+
+    // If there's previous context, add more specific follow-up questions
+    if (previousContext) {
+      const contextWords = previousContext.split(' ')
+        .filter(word => word.length > 4)
+        .slice(-3);
+      
+      baseQuestions.push(
+        `How does this relate to ${contextWords.join(' ')}?`,
+        `What's the connection between this and the previous topic?`
+      );
+    }
+
+    return baseQuestions;
   };
 
   const starterSuggestions = [
@@ -66,10 +80,16 @@ export function SearchBox() {
     setIsLoading(true);
     
     try {
+      // Get the previous conversation context if it exists
+      const previousContext = conversations.length > 0 ? conversations[conversations.length - 1].context : undefined;
+
       const response = await fetch("/api/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ 
+          query,
+          previousContext 
+        }),
       });
 
       const data = await response.json();
@@ -84,12 +104,13 @@ export function SearchBox() {
       }
 
       if (data.answer) {
-        const suggestions = generateSuggestions(query, data.answer);
+        const suggestions = generateSuggestions(query, data.answer, previousContext);
         setConversations(prev => [...prev, {
           query,
           answer: data.answer,
           sources: data.sources,
-          suggestions
+          suggestions,
+          context: data.context
         }]);
         
         addToHistory({
