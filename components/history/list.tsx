@@ -16,6 +16,12 @@ import { useHistoryStore } from "@/lib/store/history";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
+interface Source {
+  link: string;
+  title: string;
+  position: number;
+}
+
 export function HistoryList() {
   const items = useHistoryStore((state) => state.items);
   const removeItem = useHistoryStore((state) => state.removeItem);
@@ -40,7 +46,7 @@ export function HistoryList() {
     }
   };
 
-  const processAnswer = (text: string, sources: any[]) => {
+  const processAnswer = (text: string, sources: Source[] | undefined) => {
     // Remove markdown-style bold markers
     text = text.replace(/\*\*/g, '');
     
@@ -106,7 +112,7 @@ export function HistoryList() {
               <div className="rounded-lg border bg-card p-4">
                 <h3 className="mb-3 text-sm font-medium text-primary">Sources</h3>
                 <div className="space-y-2">
-                  {item.sources.map((source: any, index: number) => (
+                  {item.sources.map((source: Source, index: number) => (
                     <a
                       key={source.position}
                       href={source.link}
