@@ -78,17 +78,16 @@ export function SearchBox() {
     if (!query.trim()) return;
 
     setIsLoading(true);
-    let response;
     
     try {
       // Get the previous conversation context if it exists
       const previousContext = conversations.length > 0 ? conversations[conversations.length - 1].context : undefined;
 
-      response = await fetch("/api/search", {
+      const response = await fetch("/api/search", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
+          'Cache-Control': 'no-cache'
         },
         body: JSON.stringify({ 
           query: query.trim(),
@@ -96,25 +95,16 @@ export function SearchBox() {
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.text();
-        let errorMessage;
-        try {
-          const jsonError = JSON.parse(errorData);
-          errorMessage = jsonError.error || 'Failed to fetch results';
-        } catch {
-          errorMessage = errorData || `HTTP error! status: ${response.status}`;
-        }
-        throw new Error(errorMessage);
+        throw new Error(data.error || `Error: ${response.status}`);
       }
 
-      const responseText = await response.text();
-      if (!responseText) {
-        throw new Error('Empty response received');
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid response format');
       }
 
-      const data = JSON.parse(responseText);
-      
       if (data.error) {
         setConversations(prev => [...prev, { 
           query, 
@@ -139,6 +129,8 @@ export function SearchBox() {
           answer: data.answer,
           sources: data.sources || []
         });
+      } else {
+        throw new Error('No answer received from the server');
       }
     } catch (error) {
       console.error("Search error:", error);

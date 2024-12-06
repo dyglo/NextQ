@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { generateAnswer } from "@/lib/xai";
 import { searchWithSerpApi } from "@/lib/serpapi";
 
-export const maxDuration = 300; // Set maximum duration to 300 seconds
-export const dynamic = 'force-dynamic'; // Disable static optimization
-export const fetchCache = 'force-no-store'; // Disable response caching
+// Configure route segment
+export const runtime = 'edge'; // Use edge runtime for better performance
+export const maxDuration = 300; // 5 minutes timeout
 
 export async function POST(request: Request) {
   try {
@@ -73,20 +73,13 @@ export async function POST(request: Request) {
         throw new Error("Failed to generate answer");
       }
 
-      const response = {
+      return NextResponse.json({
         answer,
         sources: searchResults,
         context: query
-      };
-
-      // Validate response before sending
-      const responseStr = JSON.stringify(response);
-      JSON.parse(responseStr); // Verify JSON is valid
-
-      return new NextResponse(responseStr, {
+      }, {
         status: 200,
         headers: {
-          'Content-Type': 'application/json',
           'Cache-Control': 'no-store, no-cache, must-revalidate'
         }
       });
