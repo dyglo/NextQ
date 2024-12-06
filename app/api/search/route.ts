@@ -2,14 +2,35 @@ import { NextResponse } from "next/server";
 import { generateAnswer } from "@/lib/xai";
 import { searchWithSerpApi } from "@/lib/serpapi";
 
+export const maxDuration = 300; // Set maximum duration to 300 seconds
+export const dynamic = 'force-dynamic'; // Disable static optimization
+export const fetchCache = 'force-no-store'; // Disable response caching
+
 export async function POST(request: Request) {
   try {
-    const { query, previousContext } = await request.json();
-    
-    if (!query) {
+    // Validate request body
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== 'object') {
       return NextResponse.json(
-        { error: "Query is required" },
+        { error: "Invalid request body" },
         { status: 400 }
+      );
+    }
+
+    const { query, previousContext } = body;
+    
+    if (!query || typeof query !== 'string') {
+      return NextResponse.json(
+        { error: "Query is required and must be a string" },
+        { status: 400 }
+      );
+    }
+
+    // Validate environment variables
+    if (!process.env.SERPAPI_API_KEY || !process.env.XAI_API_KEY) {
+      return NextResponse.json(
+        { error: "API configuration is incomplete" },
+        { status: 500 }
       );
     }
 
@@ -36,13 +57,13 @@ export async function POST(request: Request) {
       let contextPrompt = `Based on these search results, provide a comprehensive answer to the question: "${query}"`;
       
       // Add previous context if available
-      if (previousContext) {
+      if (previousContext && typeof previousContext === 'string') {
         contextPrompt = `Previous context: ${previousContext}\n\nBased on the previous context and these new search results, provide a comprehensive answer to the follow-up question: "${query}"`;
       }
 
       contextPrompt += `\n\nSearch Results:\n\n${
         searchResults.map((r: any, i: number) => 
-          `[${i + 1}] Title: ${r.title}\nSnippet: ${r.snippet}\nURL: ${r.link}\n`
+          `[${i + 1}] Title: ${r.title || ''}\nSnippet: ${r.snippet || ''}\nURL: ${r.link || ''}\n`
         ).join('\n')
       }`;
       
@@ -52,10 +73,22 @@ export async function POST(request: Request) {
         throw new Error("Failed to generate answer");
       }
 
-      return NextResponse.json({ 
+      const response = {
         answer,
         sources: searchResults,
-        context: query // Return the current query as context for future reference
+        context: query
+      };
+
+      // Validate response before sending
+      const responseStr = JSON.stringify(response);
+      JSON.parse(responseStr); // Verify JSON is valid
+
+      return new NextResponse(responseStr, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate'
+        }
       });
     } catch (aiError) {
       console.error('AI answer generation error:', aiError);

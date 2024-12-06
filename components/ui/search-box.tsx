@@ -78,28 +78,49 @@ export function SearchBox() {
     if (!query.trim()) return;
 
     setIsLoading(true);
+    let response;
     
     try {
       // Get the previous conversation context if it exists
       const previousContext = conversations.length > 0 ? conversations[conversations.length - 1].context : undefined;
 
-      const response = await fetch("/api/search", {
+      response = await fetch("/api/search", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        },
         body: JSON.stringify({ 
-          query,
+          query: query.trim(),
           previousContext 
         }),
       });
 
-      const data = await response.json();
-      
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch results');
+        const errorData = await response.text();
+        let errorMessage;
+        try {
+          const jsonError = JSON.parse(errorData);
+          errorMessage = jsonError.error || 'Failed to fetch results';
+        } catch {
+          errorMessage = errorData || `HTTP error! status: ${response.status}`;
+        }
+        throw new Error(errorMessage);
       }
 
+      const responseText = await response.text();
+      if (!responseText) {
+        throw new Error('Empty response received');
+      }
+
+      const data = JSON.parse(responseText);
+      
       if (data.error) {
-        setConversations(prev => [...prev, { query, error: data.error }]);
+        setConversations(prev => [...prev, { 
+          query, 
+          error: data.error,
+          context: previousContext 
+        }]);
         return;
       }
 
@@ -108,9 +129,9 @@ export function SearchBox() {
         setConversations(prev => [...prev, {
           query,
           answer: data.answer,
-          sources: data.sources,
+          sources: data.sources || [],
           suggestions,
-          context: data.context
+          context: data.context || query
         }]);
         
         addToHistory({
@@ -123,7 +144,8 @@ export function SearchBox() {
       console.error("Search error:", error);
       setConversations(prev => [...prev, {
         query,
-        error: error instanceof Error ? error.message : 'An unexpected error occurred'
+        error: error instanceof Error ? error.message : 'An unexpected error occurred',
+        context: conversations.length > 0 ? conversations[conversations.length - 1].context : undefined
       }]);
     } finally {
       setIsLoading(false);
