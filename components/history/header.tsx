@@ -14,7 +14,7 @@ export function HistoryHeader() {
   const clearHistory = useHistoryStore((state) => state.clearHistory);
 
   return (
-    <div className="flex items-center justify-between gap-3 mb-6">
+    <div className="flex items-center justify-between gap-3 mb-6 px-4">
       <div className="flex items-center gap-3">
         <BookMarked className="h-8 w-8" />
         <h1 className="text-4xl font-bold">Library</h1>

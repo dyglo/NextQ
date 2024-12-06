@@ -7,6 +7,7 @@ export interface HistoryItem {
   answer: string;
   timestamp: number;
   type?: 'text' | 'image' | 'pdf' | 'voice';
+  sources?: any[];
 }
 
 interface HistoryStore {
