@@ -61,6 +61,21 @@ next-q/
 - Start production server: `npm start`
 - Run linter: `npm run lint`
 
+## 🔑 Environment Variables
+
+Create a `.env` file in the root directory and add the following variables:
+
+```bash
+# Required API Keys
+XAI_API_KEY=your_xai_api_key_here
+SERPAPI_API_KEY=your_serpapi_key_here
+
+# Optional Configuration
+NODE_ENV=development
+```
+
+> Note: For deployment on Vercel, add these environment variables in your project settings.
+
 ## 🌐 Deployment
 
 The project is configured for easy deployment on [Vercel](https://vercel.com). Simply connect your GitHub repository to Vercel for automatic deployments.
