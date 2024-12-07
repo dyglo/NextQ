@@ -47,42 +47,28 @@ export function Sidebar({ className }: SidebarProps) {
       <div
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex flex-col gap-4 border-r bg-background transition-all duration-300 ease-in-out",
-          isOpen ? "w-64" : "w-16",
+          isOpen ? "w-64" : "w-0 border-r-0",
           "top-16", // Account for header
           className
         )}
       >
-        <div className="flex-1 overflow-y-auto py-4">
-          <nav className="flex flex-col gap-2 px-2">
-            {navItems.map((item) => (
-              <NavItem 
-                key={item.href} 
-                {...item} 
-                isCollapsed={!isOpen}
-              />
+        <div className={cn("flex flex-col gap-2 px-2", !isOpen && "hidden")}>
+          <div className="flex flex-col gap-2">
+            {navItems.map((item, index) => (
+              <NavItem key={index} {...item} />
             ))}
-          </nav>
-
-          <div className={cn(
-            "mt-6 px-2 transition-opacity duration-200",
-            !isOpen && "opacity-0 pointer-events-none"
-          )}>
-            <ProUpgrade />
           </div>
-        </div>
-
-        <div className={cn(
-          "border-t p-2 transition-opacity duration-200",
-          !isOpen && "opacity-0 pointer-events-none"
-        )}>
-          <UserProfile />
+          <div className="mt-auto">
+            <ProUpgrade />
+            <UserProfile />
+          </div>
         </div>
       </div>
 
       {/* Push main content */}
       <div className={cn(
         "transition-[margin] duration-300 ease-in-out pt-16",
-        isOpen ? "lg:ml-64" : "lg:ml-16"
+        isOpen ? "lg:ml-64" : "lg:ml-0"
       )} />
     </>
   );

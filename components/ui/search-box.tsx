@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Image, FileText, Mic, Loader2 } from "lucide-react";
+import { Search, Image, FileText, Mic, Loader2, Copy } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useHistoryStore } from "@/lib/store/history";
@@ -199,11 +199,10 @@ export function SearchBox() {
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto">
-      {/* Title and subtitle only shown before first search */}
-      {!hasSearched && (
-        <>
-          {/* Search Input for Initial State */}
+    <div className="w-full max-w-3xl mx-auto space-y-4">
+      {!hasSearched ? (
+        // Initial search input
+        <div className="w-full max-w-3xl mx-auto">
           <div className="w-full mb-8">
             <form onSubmit={handleSearch} className="w-full">
               <div className="relative flex items-center gap-2">
@@ -290,122 +289,121 @@ export function SearchBox() {
               </motion.div>
             ))}
           </div>
-        </>
-      )}
-
-      {/* Conversations */}
-      {conversations.map((conv, idx) => (
-        <motion.div
-          key={idx}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          {/* Query */}
-          <div className="mb-4 text-sm text-muted-foreground">
-            You asked: {conv.query}
-          </div>
-
-          {/* Response */}
-          <SearchResults
-            answer={conv.answer}
-            sources={conv.sources}
-            error={conv.error}
-            isVisible={true}
-          />
-
-          {/* Suggestions */}
-          {conv.suggestions && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {conv.suggestions.map((suggestion, sIdx) => (
-                <Button
-                  key={sIdx}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleSuggestionClick(suggestion)}
-                  className="text-sm"
-                >
-                  {suggestion}
-                </Button>
-              ))}
-            </div>
-          )}
-        </motion.div>
-      ))}
-      
-      {/* Search Input for After Search */}
-      {hasSearched && (
-        <motion.div
-          layout
-          transition={{
-            duration: 0.5,
-            type: "spring",
-            stiffness: 100
-          }}
-          className="w-full sticky bottom-4 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 rounded-lg border mt-8"
-        >
-          <form onSubmit={handleSearch} className="w-full">
-            <div className="relative flex items-center gap-2">
-              <div className="relative flex-1">
-                <Input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Ask anything..."
-                  className="pr-32"
-                  disabled={isLoading}
-                />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  <motion.label
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="cursor-pointer"
-                  >
-                    <Input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*,.pdf"
-                      className="hidden"
-                      onChange={handleFileUpload}
-                      disabled={isLoading}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      disabled={isLoading}
-                    >
-                      <FileText className="h-4 w-4" />
-                    </Button>
-                  </motion.label>
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={handleVoiceInput}
-                      disabled={isLoading}
-                    >
-                      <Mic className={`h-4 w-4 ${isRecording ? "text-primary animate-pulse" : ""}`} />
-                    </Button>
-                  </motion.div>
+        </div>
+      ) : (
+        // Search results and floating search input
+        <div className="w-full max-w-3xl mx-auto">
+          {/* Conversations */}
+          {conversations.map((conv, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.1 }}
+              className="mb-8"
+            >
+              <div className="mb-4">
+                <div className="font-medium text-muted-foreground">
+                  You asked: {conv.query}
                 </div>
               </div>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Search className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </form>
-        </motion.div>
+              <SearchResults
+                answer={conv.answer}
+                sources={conv.sources}
+                error={conv.error}
+                isVisible={true}
+              />
+              {conv.suggestions && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {conv.suggestions.map((suggestion, sIdx) => (
+                    <Button
+                      key={sIdx}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      className="text-sm"
+                    >
+                      {suggestion}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          ))}
+
+          {/* Floating search input */}
+          <motion.div
+            layout
+            transition={{
+              duration: 0.5,
+              type: "spring",
+              stiffness: 100
+            }}
+            className="w-full sticky bottom-4 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 rounded-lg border mt-8"
+          >
+            <form onSubmit={handleSearch} className="w-full">
+              <div className="relative flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Ask a follow-up question..."
+                    className="pr-32"
+                    disabled={isLoading}
+                  />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <motion.label
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="cursor-pointer"
+                    >
+                      <Input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*,.pdf"
+                        className="hidden"
+                        onChange={handleFileUpload}
+                        disabled={isLoading}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        disabled={isLoading}
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                    </motion.label>
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={handleVoiceInput}
+                        disabled={isLoading}
+                      >
+                        <Mic className={`h-4 w-4 ${isRecording ? "text-primary animate-pulse" : ""}`} />
+                      </Button>
+                    </motion.div>
+                  </div>
+                </div>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Search className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
       )}
     </div>
   );

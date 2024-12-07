@@ -20,9 +20,13 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          <div className="relative min-h-screen">
+          <div className="flex min-h-screen">
             <Sidebar />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 w-full transition-all duration-300 ease-in-out">
+              <div className="max-w-screen-xl mx-auto">
+                {children}
+              </div>
+            </main>
           </div>
         </ThemeProvider>
       </body>
