@@ -87,7 +87,7 @@ export function SearchBox() {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          'Cache-Control': 'no-cache'
+          'Accept': 'application/json'
         },
         body: JSON.stringify({ 
           query: query.trim(),
@@ -95,48 +95,57 @@ export function SearchBox() {
         }),
       });
 
-      const data = await response.json();
-
+      // First check if the response is ok
       if (!response.ok) {
-        throw new Error(data.error || `Error: ${response.status}`);
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.error || `Request failed with status ${response.status}`
+        );
       }
 
+      // Then try to parse the response as JSON
+      const data = await response.json();
+
+      // Validate response data
       if (!data || typeof data !== 'object') {
         throw new Error('Invalid response format');
       }
 
+      // Handle error in response data
       if (data.error) {
-        setConversations(prev => [...prev, { 
-          query, 
-          error: data.error,
-          context: previousContext 
-        }]);
-        return;
+        throw new Error(data.error);
       }
 
-      if (data.answer) {
-        const suggestions = generateSuggestions(query, data.answer, previousContext);
-        setConversations(prev => [...prev, {
-          query,
-          answer: data.answer,
-          sources: data.sources || [],
-          suggestions,
-          context: data.context || query
-        }]);
-        
-        addToHistory({
-          query,
-          answer: data.answer,
-          sources: data.sources || []
-        });
-      } else {
+      // Ensure answer exists in response
+      if (!data.answer) {
         throw new Error('No answer received from the server');
       }
-    } catch (error) {
-      console.error("Search error:", error);
+
+      // Process successful response
+      const suggestions = generateSuggestions(query, data.answer, previousContext);
       setConversations(prev => [...prev, {
         query,
-        error: error instanceof Error ? error.message : 'An unexpected error occurred',
+        answer: data.answer,
+        sources: data.sources || [],
+        suggestions,
+        context: data.context || query
+      }]);
+      
+      // Add to history
+      addToHistory({
+        query,
+        answer: data.answer,
+        sources: data.sources || []
+      });
+
+    } catch (error) {
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'An unexpected error occurred';
+      
+      setConversations(prev => [...prev, {
+        query,
+        error: errorMessage,
         context: conversations.length > 0 ? conversations[conversations.length - 1].context : undefined
       }]);
     } finally {
